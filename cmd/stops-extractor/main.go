@@ -12,7 +12,7 @@ import (
 )
 
 func main() {
-	sourLogger, err := zap.NewProduction()
+	sourLogger, err := zap.NewDevelopment()
 	if err != nil {
 		panic(err)
 	}

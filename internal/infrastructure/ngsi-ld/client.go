@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"bitbucket.org/phoops/otp-stops-extractor/internal/core/entities"
+	"github.com/philiphil/geojson"
 	"github.com/phoops/ngsi-gold/client"
 	"github.com/phoops/ngsi-gold/ldcontext"
 	"github.com/phoops/ngsi-gold/model"
@@ -45,6 +46,7 @@ func (c *Client) WriteStopsBatch(ctx context.Context, stops []*entities.Stop) er
 			LdCtx:  &ldcontext.DefaultContext,
 			Entity: e,
 		})
+		c.logger.Debugw("added entity to batch", "id", e.ID, "gtfs IDs", s.GtfsIDs, "entity GTFS IDs", e.Properties["gtfsIDs"].Value)
 	}
 
 	err := c.ngsiLdClient.BatchUpsertEntities(ctx, payload, client.UpsertSetUpdateMode)
@@ -56,11 +58,12 @@ func (c *Client) WriteStopsBatch(ctx context.Context, stops []*entities.Stop) er
 }
 
 func stopToBrokerEntity(e *entities.Stop) *model.Entity {
-	id := fmt.Sprintf("stop:%s", e.Code)
-	eType := "Stop"
+	id := fmt.Sprintf("urn:ngsi-ld:GtfsStop:%s", e.Code)
+	location := geojson.NewPointGeometry([]float64{float64(e.Lon), float64(e.Lat)})
+
 	return &model.Entity{
 		ID:   id,
-		Type: eType,
+		Type: "GtfsStop",
 		Properties: model.Properties{
 			"name": model.Property{
 				Value: e.Name,
@@ -68,6 +71,18 @@ func stopToBrokerEntity(e *entities.Stop) *model.Entity {
 			"code": model.Property{
 				Value: e.Code,
 			},
+			"gtfsIDs": model.Property{
+				Value: e.GtfsIDs,
+			},
+		},
+		// Build multi-value relationship from e.Agencies
+		// Need library to support multi-value relationship
+		// Relationships: model.Relationships{
+		// 	"operatedBy": []
+		// },
+		Location: &model.GeoProperty{
+			Value: location,
 		},
 	}
+
 }
