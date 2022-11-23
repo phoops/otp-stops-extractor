@@ -38,20 +38,20 @@ func NewClient(logger *zap.SugaredLogger, baseURL string) (*Client, error) {
 }
 
 func (c *Client) WriteStopsBatch(ctx context.Context, stops []*entities.Stop) error {
-	entitiesToCreate := []*model.Entity{}
+	payload := []*client.EntityWithContext{}
 	for _, s := range stops {
 		e := stopToBrokerEntity(s)
-		entitiesToCreate = append(entitiesToCreate, e)
+		payload = append(payload, &client.EntityWithContext{
+			LdCtx:  &ldcontext.DefaultContext,
+			Entity: e,
+		})
 	}
 
-	for _, e := range entitiesToCreate {
-		err := c.ngsiLdClient.CreateEntity(ctx, &ldcontext.DefaultContext, e)
-		if err != nil {
-			c.logger.Errorw("can't create entity", "entity ID", e.ID)
-			return errors.Wrap(err, "can't create entity")
-		}
+	err := c.ngsiLdClient.BatchUpsertEntities(ctx, payload, client.UpsertSetUpdateMode)
+	if err != nil {
+		c.logger.Errorw("can't update entities", "err", err)
+		return errors.Wrap(err, "can't update entities")
 	}
-
 	return nil
 }
 
