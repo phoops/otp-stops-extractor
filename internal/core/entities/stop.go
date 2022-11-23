@@ -1,8 +1,10 @@
 package entities
 
 type Stop struct {
-	Code string
-	Name string
-	Lat  float32
-	Lon  float32
+	GtfsIDs  []string
+	Agencies []string
+	Code     string
+	Name     string
+	Lat      float32
+	Lon      float32
 }

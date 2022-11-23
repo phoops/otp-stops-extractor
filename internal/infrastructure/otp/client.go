@@ -43,11 +43,16 @@ func (c *Client) GetStopsByBoundingBox(ctx context.Context, minLon, maxLon, minL
 	// Represent
 	var stopsByBB struct {
 		StopsByBbox []struct {
-			ID   string
-			Lat  float32
-			Lon  float32
-			Code string
-			Name string
+			GtfsId string
+			Lat    float32
+			Lon    float32
+			Code   string
+			Name   string
+			Routes []struct {
+				Agency struct {
+					Name string
+				}
+			}
 		} `graphql:"stopsByBbox(minLon: $minLon, maxLon: $maxLon, minLat: $minLat, maxLat: $maxLat)"`
 	}
 
@@ -64,15 +69,34 @@ func (c *Client) GetStopsByBoundingBox(ctx context.Context, minLon, maxLon, minL
 		return nil, errors.Wrap(err, "graphql query to OTP failed")
 	}
 
-	c.logger.Debug("About to convert to entities")
+	c.logger.Debug("Group by stop code")
+	byStopCode := map[string]*entities.Stop{}
+	for _, item := range stopsByBB.StopsByBbox {
+		stop, ok := byStopCode[item.Code]
+		if !ok {
+			stop = &entities.Stop{
+				Code: item.Code,
+				Name: item.Name,
+				Lat:  item.Lat,
+				Lon:  item.Lon,
+			}
+		}
+
+		stop.GtfsIDs = append(stop.GtfsIDs, item.GtfsId)
+
+		// Extract agencies from routes
+		stopAgencies := []string{}
+		for _, r := range item.Routes {
+			stopAgencies = append(stopAgencies, r.Agency.Name)
+		}
+		stop.Agencies = append(stop.Agencies, stopAgencies...)
+
+		byStopCode[item.Code] = stop
+	}
+
 	res := []*entities.Stop{}
-	for _, stop := range stopsByBB.StopsByBbox {
-		res = append(res, &entities.Stop{
-			Code: stop.Code,
-			Name: stop.Name,
-			Lat:  stop.Lat,
-			Lon:  stop.Lon,
-		})
+	for _, stop := range byStopCode {
+		res = append(res, stop)
 	}
 
 	return res, nil
