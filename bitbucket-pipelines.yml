@@ -1,0 +1,61 @@
+---
+image: golang:1.18-buster
+
+definitions:
+  steps:
+    - step: &lint-code
+        caches:
+          - gomodcache
+        name: Lint code
+        image: golangci/golangci-lint:v1.45.2
+        script:
+          - git config --global url."git@bitbucket.org:".insteadOf https://bitbucket.org/
+          - GOPRIVATE=bitbucket.org/phoops golangci-lint run -v
+    - step: &docker-compose-test
+        caches:
+          - gomodcache
+        size: 2x
+        name: Docker compose test
+        services:
+          - docker
+        script:
+          - curl -L "https://github.com/docker/compose/releases/download/1.28.5/docker-compose-$(uname -s)-$(uname -m)" -o /usr/bin/docker-compose
+          - chmod +x /usr/bin/docker-compose
+          - docker-compose -f docker-compose-ci.yaml up -d
+          - git config --global url."git@bitbucket.org:".insteadOf https://bitbucket.org/
+          - go mod download
+          - go test -v ./...
+          - docker-compose -f docker-compose-ci.yaml down
+    - step: &docker-image
+        size: 2x
+        name: Docker image
+        script:
+          - eval $(ssh-agent)
+          - docker login https://nexus.phoops.it/ --username $DOCKER_USERNAME --password $DOCKER_PASSWORD
+          - sh -c "$(curl --location https://taskfile.dev/install.sh)" -- -d -b /usr/local/bin
+          - git config --global url."git@bitbucket.org:".insteadOf https://bitbucket.org/
+          - git status
+          - go mod download
+          - go mod tidy
+          - go mod vendor
+          - git status
+          - docker build -f docker/stops-extractor.dockerfile . -t nexus.phoops.it/phoops/otp-stops-extractor:${BITBUCKET_TAG}
+        services:
+          - docker
+  caches:
+    gomodcache: /go
+  services:
+    docker:
+      memory: 4096
+
+pipelines:
+  tags:
+    v*:
+      - step: *lint-code
+      - step: *docker-compose-test
+      - step: *docker-image
+
+  default:
+    - parallel:
+        - step: *lint-code
+        - step: *docker-compose-test
