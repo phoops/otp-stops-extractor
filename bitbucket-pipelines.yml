@@ -40,6 +40,7 @@ definitions:
           - go mod vendor
           - git status
           - docker build -f docker/stops-extractor.dockerfile . -t nexus.phoops.it/phoops/otp-stops-extractor:${BITBUCKET_TAG}
+          - docker push nexus.phoops.it/phoops/otp-stops-extractor:${BITBUCKET_TAG}
         services:
           - docker
   caches:
