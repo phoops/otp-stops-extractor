@@ -7,7 +7,7 @@ RUN git config --global url."git@bitbucket.org:phoops".insteadOf "https://bitbuc
 
 COPY . /app
 RUN go mod download
-RUN go build ./cmd/stops-extractor
+RUN CGO_ENABLED=0 go build ./cmd/stops-extractor
 RUN ls -lah . && chmod +x stops-extractor && pwd
 
 FROM alpine
