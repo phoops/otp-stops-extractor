@@ -1,0 +1,12 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+    name: otp-stops-extractor-config
+data:
+    BROKER_URL: http://scorpio-broker:9090
+    OTP_URL: https://www.muoversintoscana.it/gw/otp/routers/toscana/index/graphql
+    BOUNDING_BOX_MIN_LON: "11.801471"
+    BOUNDING_BOX_MAX_LON: "11.922997"
+    BOUNDING_BOX_MIN_LAT: "43.350637"
+    BOUNDING_BOX_MAX_LAT: "43.503272"

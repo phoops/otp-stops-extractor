@@ -1,0 +1,46 @@
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: otp-stops-extractor-job
+spec:
+  schedule: "*/15 * * * *"
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+            - name: extractor
+              env:
+                - name: BROKER_URL
+                  valueFrom:
+                    configMapKeyRef:
+                      name: otp-stops-extractor-config
+                      key: BROKER_URL
+                - name: OTP_URL
+                  valueFrom:
+                    configMapKeyRef:
+                      name: otp-stops-extractor-config
+                      key: OTP_URL
+                - name: BOUNDING_BOX_MIN_LON
+                  valueFrom:
+                    configMapKeyRef:
+                      name: otp-stops-extractor-config
+                      key: BOUNDING_BOX_MIN_LON
+                - name: BOUNDING_BOX_MAX_LON
+                  valueFrom:
+                    configMapKeyRef:
+                      name: otp-stops-extractor-config
+                      key: BOUNDING_BOX_MAX_LON
+                - name: BOUNDING_BOX_MIN_LAT
+                  valueFrom:
+                    configMapKeyRef:
+                      name: otp-stops-extractor-config
+                      key: BOUNDING_BOX_MIN_LAT
+                - name: BOUNDING_BOX_MAX_LAT
+                  valueFrom:
+                    configMapKeyRef:
+                      name: otp-stops-extractor-config
+                      key: BOUNDING_BOX_MAX_LAT
+              image: otp-stops-extractor:v0.1.0
+          restartPolicy: OnFailure
