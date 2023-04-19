@@ -17,7 +17,8 @@ https://github.com/smart-data-models/dataModel.UrbanMobility/tree/master/GtfsSto
 
 ## Deployment
 
-The application is meant to be run as a Kubernetes job, see `deployment/stops-extractor.yaml`
+The application is meant to be run as a Kubernetes job, see `deployment/stops-extractor.yaml`.
+No need for a bundle of any kind, change config.yaml to your environment and apply all the files in `deployment`
 
 ## License
 
